@@ -13,7 +13,7 @@ TERMINAL="/usr/bin/xterm"
 $TERMINAL -e "java $CONFIG SistemaInterface 2>/dev/null" &
 $TERMINAL -e "java $CONFIG SistemaInterface 2>/dev/null" &
 $TERMINAL -e "java $CONFIG SistemaInterface 2>/dev/null" &
-
+$TERMINAL -e "java $CONFIG SistemaInterface 2>/dev/null" &
 
 
 ## ou manualmente com 

@@ -12,6 +12,7 @@ import org.jgroups.util.Util;
 
 public class SistemaInterface extends ReceiverAdapter {
 	private SistemaNucleo sistema;
+	
 	private Scanner teclado = new Scanner(System.in);
 	private String line;
 	
@@ -33,6 +34,7 @@ public class SistemaInterface extends ReceiverAdapter {
 			channel.setDiscardOwnMessages(true);
 			channel.setReceiver(this);	//quem irá lidar com as mensagens recebidas
 			channel.connect("GLOBAL");
+			
 			channel.getState(null, 10000);
 			eventLoop();
 			channel.close();
@@ -43,7 +45,8 @@ public class SistemaInterface extends ReceiverAdapter {
 	}
 		
 	public void viewAccepted(View new_view) {
-		System.out.println("[DEBBUG] ** View: "+new_view);
+		
+		System.out.println("[GLOBAL BOT] ** Usuários ativos: "+new_view.getMembers());
 	}
 	
 	public void receive(Message msgrcvd) {
@@ -76,6 +79,8 @@ public class SistemaInterface extends ReceiverAdapter {
 	}
 	
 	private void eventLoop() throws Exception {
+		System.out.println("[GLOBAL BOT]: Bem vindo ao Sitema de Leilões");
+		System.out.println("[GLOBAL BOT]: Se você é novato no sistema digite o comando [help] para acessar a lista de comandos");
 		while( executando ) {
 			try {
 				this.menu();
@@ -88,11 +93,8 @@ public class SistemaInterface extends ReceiverAdapter {
 	public void menu() throws Exception{
 		System.out.print("> ");
         line = teclado.nextLine().toLowerCase();
-                        
-	    if(line.startsWith("quit") || line.startsWith("exit") || line.startsWith("sair")){
-	        this.executando = false;
-	    }
-	    else if(line.startsWith(".novo item:")){
+        
+	    if(line.startsWith(".novo item:")){
 			int id = sistema.gerarIdItem();
 			String item = line.split(":")[1];
 			String user = this.user_name;
@@ -104,19 +106,26 @@ public class SistemaInterface extends ReceiverAdapter {
 	    	this.channel.send(new Message(null, null, msg));
 		}
 	    else if(line.startsWith(".nova sala:")){
+	    	line = line.split(":")[1];
 	    	int id = sistema.gerarIdSala();
-			String item = line.split(":")[1];
+			String item = line.split(";")[0];
+			String lanceInicial = line.split(";")[1];
+			String valorLance = line.split(";")[2];
 			String user = this.user_name;
 			long data = System.currentTimeMillis();
 	    	
-			String msg = ".nova sala:"+id+";"+item+";"+user+";"+data;
+			//String msg = ".nova sala:"+id+";"+item+";"+user+";"+data;
+			String msg = ".nova sala:"+id+";"+item+";"+lanceInicial+";"+valorLance+";"+user+";"+data;
 			sistema.criarNovaSala(msg);
 			sistema.historico(msg);
 	    	this.channel.send(new Message(null, null, msg));
 		}
 	    else if(line.startsWith(".entrar sala:")){
-	    	line = line.split(":")[1];
-	    	System.out.println(this.user_name+" entrou na sala "+line);
+	    	this.channel.disconnect();
+	    	sistema.entrarSala(line);
+	    	
+	    	channel.connect("GLOBAL");
+			channel.getState(null, 10000);
 	    }
 		else if(line.startsWith(".listar itens")){
 			sistema.listarItens();
@@ -127,16 +136,20 @@ public class SistemaInterface extends ReceiverAdapter {
 		else if(line.startsWith(".creditos")){
 			sistema.creditos();
 		}
+		else if(line.startsWith("quit") || line.startsWith("exit") || line.startsWith("sair")){
+	        this.executando = false;
+	    }
 		else if(line.startsWith(":")){
 			String user = this.user_name;
 			String msg = "["+user+"]"+line.replace(":", ": ");
 			this.channel.send(new Message(null, null, msg));
 		}
 		else{
+			System.out.println("[GLOBAL BOT]: Ooops... operação inválida!");
 			sistema.help();
 		}
     }
-		
+	
 	public static void main(String[] args) {
 		new SistemaInterface().start();
 	}
