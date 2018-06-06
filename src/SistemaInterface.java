@@ -1,7 +1,11 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 
@@ -19,7 +23,7 @@ import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
 
 public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
-	String sss = "";
+	
 	private SistemaNucleo sistema;
 	
 	private String user_name = System.getProperty("user.name", "n/a");
@@ -34,6 +38,7 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 	private JChannel channel;
 	//private MessageDispatcher dispachante;
 	
+	
 	private View old_view;
 	
 	public SistemaInterface() {
@@ -47,17 +52,27 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 	private void start() {
 		try{
 			this.channel=new JChannel("../meu.xml");		//usa a configuração default
-			
 			//this.channel=new JChannel();
 			this.channel.setDiscardOwnMessages(true);
 			this.channel.setReceiver(this);	//quem irá lidar com as mensagens recebidas
+			System.out.println("entrou C");
 			this.channel.connect("GLOBAL");
-			//this.channel.getState(null, 10000);
+			System.out.println("entrou D");
 			
+			try{
+				this.channel.getState(this.channel.getView().getCreator(), 1000000);
+			}
+			catch(Exception e){
+				System.out.println("Falha ao recuperar estado");
+			}
+			
+			
+			System.out.println("entrou E");
 			this.lockservice = new LockService(this.channel);
 			this.salasLock = lockservice.getLock("salas");
 			this.itensLock = lockservice.getLock("itens");
 			this.old_view = null;
+			
 			eventLoop();
 			this.channel.close();
 		}
@@ -87,8 +102,23 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 				
 		//System.out.println("id: "+this.channel.getAddress()+" >"+new_view.getMembers().get(new_view.size()-1));
 		
+		//verifica se ele é o último membro à entrar no canal
+		
+		System.out.println("É novato "+this.channel.getAddress()+" "+new_view.getMembers().get(new_view.getMembers().size()-1));
+		
+		View view = this.channel.getView();
+		if(this.channel.getAddress().equals(view.getMembers().get(new_view.getMembers().size()-1))){
+        	try {
+				//this.channel.getState(null, 10000);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+		
+        /*
 		System.out.println("id: "+old_view+" >"+new_view);
-		if(this.old_view==null||this.channel.getAddress().equals(new_view.getMembers().get(new_view.size()-1))){
+		if(this.old_view==null||this.channel.getAddress()==new_view.getMembers().get(new_view.size()-1)){
 		//if(this.old_view==null){
 			try {
 				this.channel.getState(null, 10000);
@@ -97,8 +127,8 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 				e.printStackTrace();
 			}
 		}
-		
-		this.old_view = new_view;
+		//new_view.
+		this.old_view = new_view;*/
 	}
 	
 	public void receive(Message msgrcvd) {
@@ -119,24 +149,22 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 	}
 	
 	public void getState(OutputStream output) throws Exception {
-		Util.objectToStream(new String("teste"), new DataOutputStream(output));
-		synchronized(sistema) {
-			//Util.objectToStream(sistema, new DataOutputStream(output));
-			
+		//Util.objectToStream(new String("teste"), new DataOutputStream(output));
+		synchronized(this.sistema) {
+			Util.objectToStream(this.sistema, new DataOutputStream(output));
 		}
 	}
 	
 	public void setState(InputStream input) throws Exception {
-		//SistemaNucleo sistema = (SistemaNucleo)Util.objectFromStream(new DataInputStream(input));
-		this.sss = (String)Util.objectFromStream(new DataInputStream(input));
-		synchronized(sistema) {
-			//this.sistema = sistema;
-			
+		//SistemaNucleo system = ;
+		//this.sss = (String)Util.objectFromStream(new DataInputStream(input));
+		synchronized(this.sistema) {
+			this.sistema = (SistemaNucleo)Util.objectFromStream(new DataInputStream(input));
+			//this.sistema.setItens((ArrayList<Item>)Util.objectFromStream(new DataInputStream(input)));
 		}
 	}
 	
 	private void eventLoop() throws Exception {
-		
 		//this.channel.getState(null, 10000);
 		System.out.println("[GLOBAL BOT]: Bem vindo ao Sitema de Leilões");
 		System.out.println("[GLOBAL BOT]: Se você é novato no sistema digite o comando [help] para acessar a lista de comandos");
@@ -164,6 +192,11 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		System.out.print("> ");
         line = teclado.nextLine().toLowerCase();
         
+        
+        
+        
+        
+        
 	    if(line.startsWith(".novo item:")){
 	    	String msg = "";
 			String item = line.split(":")[1];
@@ -182,7 +215,7 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 			}
 			sistema.criarNovoItem(msg);
 			sistema.historico(msg);
-	    	
+			
 		}
 	    else if(line.startsWith(".nova sala:")){
 	    	
@@ -233,9 +266,6 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		}
 		else if(line.startsWith(".atualizar")){
 			this.channel.getState();
-			
-			
-			System.out.println(this.sss);
 		}
 		else if(line.startsWith("quit") || line.startsWith("exit") || line.startsWith("sair")){
 	        this.executando = false;

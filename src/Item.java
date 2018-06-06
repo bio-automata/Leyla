@@ -1,3 +1,5 @@
+import java.io.Serializable;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -8,8 +10,10 @@
  *
  * @author hera
  */
-public class Item {
-    private int id;
+public class Item  implements Serializable{
+	
+	private static final long serialVersionUID = 5948447758362484465L;
+	private int id;
     private String nome;
     private String dono;
     private long data;

@@ -11,6 +11,7 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.blocks.MessageDispatcher;
+import org.jgroups.blocks.Request;
 import org.jgroups.blocks.RequestHandler;
 import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
@@ -127,7 +128,7 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 	public void notificarCluster(String text) throws Exception {
 		System.out.println("Notificando Cluster...");
 		Message msg  = new Message(null, null, text);
-        RequestOptions opts = new RequestOptions(ResponseMode.GET_ALL, 5000);
+        RequestOptions opts = new RequestOptions(ResponseMode.GET_ALL, 5000).setFlags(Message.NO_FC, Message.DONT_BUNDLE);
         
         MessageDispatcher dispachante = new MessageDispatcher(this.channel, null, null, this);
         RspList<String> rsp_list = dispachante.castMessage(null, msg,opts);
@@ -148,7 +149,7 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 		else{
 			double lance = Double.parseDouble(this.line);
 			
-			if(lance>this.sala.getValorLance()){
+			if(lance>this.sala.getLanceAtual()){
 				//this.leiloeiro.restart();
 				String msg = ".lance:"+user_name+";"+lance;
 				this.lance = lance;
@@ -181,7 +182,7 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 				else{
 					msg = msg.split(":")[1];
 					double lance = Double.parseDouble(msg.split(";")[1]);
-					if(lance>this.sala.getValorLance()){
+					if(lance>this.sala.getLanceAtual()){
 						//this.sala.setValorLance(lance);
 						this.sala.novoLance(lance, msg.split(";")[0]);
 						//msg = "[Árbitro da sala]: Usuário "+msgrcvd.src()+" deu um lance de "+lance;

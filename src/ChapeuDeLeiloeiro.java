@@ -44,7 +44,7 @@ public class ChapeuDeLeiloeiro implements Runnable{
 			if(this.timer==0){
 				this.timer = System.currentTimeMillis();
 			}
-			if(System.currentTimeMillis()>this.timer+10000){
+			if(System.currentTimeMillis()>this.timer+10000 ){
 				String msg = "[LEILOEIRO]: ";
 				this.timer = System.currentTimeMillis();
 				if(this.contador>3){

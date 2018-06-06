@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SistemaNucleo implements Serializable{
-	private static final long serialVersionUID = 2895936811947863654L;
+	private static final long serialVersionUID = 6840821732808468010L;
 	//String user_name;
 	private int contadorGlobalDeItens;
 	List<Item> itens;
@@ -62,7 +62,7 @@ public class SistemaNucleo implements Serializable{
 		
 		new SalaInterface(sala);
 	}
-			
+	
 	public void listarItens(){
 		int i = 1;
 		for(Item item: this.itens){
@@ -102,5 +102,42 @@ public class SistemaNucleo implements Serializable{
 		System.out.println(".listar itens");
 		System.out.println(".listar salas");
 		System.out.println(".creditos\n\n");
+	}
+	
+	
+	public void setItens(List<Item> itens){
+		this.itens = itens;
+	}
+	
+	public List<Item> getItens(){
+		return this.itens;
+	}
+
+	public int getContadorGlobalDeItens() {
+		return contadorGlobalDeItens;
+	}
+
+	public void setContadorGlobalDeItens(int contadorGlobalDeItens) {
+		this.contadorGlobalDeItens = contadorGlobalDeItens;
+	}
+
+	public List<Sala> getSalas() {
+		return salas;
+	}
+
+	public void setSalas(List<Sala> salas) {
+		this.salas = salas;
+	}
+
+	public List<String> getHistorico() {
+		return historico;
+	}
+
+	public void setHistorico(List<String> historico) {
+		this.historico = historico;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 }

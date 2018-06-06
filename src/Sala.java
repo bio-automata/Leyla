@@ -5,7 +5,6 @@ public class Sala implements Serializable{
 	private String nome;
     private Item item;
     private double lanceInicial;
-    private double valorLance;	//mínimo valor de um lance
     private double lanceAtual;
     private boolean leilaoFinalizado;
     private String donoDoUltimoLance;
@@ -14,7 +13,6 @@ public class Sala implements Serializable{
         this.nome = nome;
         this.item = item;
         this.lanceInicial = lanceInicial;
-        this.valorLance = valorLance;
         this.lanceAtual = this.lanceInicial;
         this.donoDoUltimoLance = "";
         this.leilaoFinalizado = false;
@@ -24,7 +22,6 @@ public class Sala implements Serializable{
         this.nome = nome;
         this.item = item;
         this.lanceInicial = 0;
-        this.valorLance = 0;
         this.lanceAtual = 0;
         this.leilaoFinalizado = false;
     }
@@ -51,14 +48,6 @@ public class Sala implements Serializable{
 
 	public void setLanceInicial(double lanceInicial) {
 		this.lanceInicial = lanceInicial;
-	}
-
-	public double getValorLance() {
-		return valorLance;
-	}
-
-	public void setValorLance(double incrementoMinimo) {
-		this.valorLance = incrementoMinimo;
 	}
 
 	public double getLanceAtual() {
@@ -89,9 +78,4 @@ public class Sala implements Serializable{
 	public void setLeilaoFinalizado(boolean leilaoFinalizado) {
 		this.leilaoFinalizado = leilaoFinalizado;
 	}
-
-
-	
-	
-	
 }
