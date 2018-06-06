@@ -1,31 +1,31 @@
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class SistemaNucleo implements Serializable{
 	private static final long serialVersionUID = 2895936811947863654L;
 	//String user_name;
+	private int contadorGlobalDeItens;
 	List<Item> itens;
-	List<Item> itensEmLeilao;
+	//List<Item> itensEmLeilao;
 	List<Sala> salas;
 	List<String> historico;
 	
 	
 	public SistemaNucleo() {
+		this.contadorGlobalDeItens = 0;
 		//this.user_name = System.getProperty("user.name", "n/a");
 		this.itens = new ArrayList<>();
 		this.salas = new ArrayList<>();
-		this.itensEmLeilao = new ArrayList<>();
 		this.historico = new ArrayList<>();
 	}
 	
 	public int gerarIdItem(){
-		return this.itens.size()+this.itensEmLeilao.size();
+		return this.contadorGlobalDeItens+1;
 	}
 	
 	public int gerarIdSala(){
-		return this.salas.size();
+		return this.salas.size()+1;
 	}
 	
 	public void criarNovoItem(String line){
@@ -34,8 +34,10 @@ public class SistemaNucleo implements Serializable{
 			String item = line.split(";")[1];
 			String dono = line.split(";")[2];
 			long data = Long.parseLong(line.split(";")[3]);
+			
+			this.contadorGlobalDeItens = id;
 			this.itens.add(new Item(id, item, dono, data));
-			System.out.println("Item adicionado: "+item);
+			System.out.println("Item adicionado: "+item+" (ID:"+this.contadorGlobalDeItens+")");
 	}
 	
 	public void criarNovaSala(String line){
@@ -44,10 +46,10 @@ public class SistemaNucleo implements Serializable{
 			int id = this.salas.size()+1;
 			int itemId = Integer.parseInt(line.split(";")[1]);
 			Item item = this.itens.remove(itemId-1);
-			double lanceInicial = Integer.parseInt(line.split(";")[2]);
-			double valorLance = Integer.parseInt(line.split(";")[3]);
+			//double lanceInicial = Integer.parseInt(line.split(";")[2]);
+			//double valorLance = Integer.parseInt(line.split(";")[3]);
 			
-			Sala sala = new Sala("sala "+id, item, lanceInicial, valorLance);
+			Sala sala = new Sala("sala "+id, item);
 			this.salas.add(sala);
 			
 			//this.itensEmLeilao.add(item);
