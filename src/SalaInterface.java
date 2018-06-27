@@ -31,28 +31,46 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 	
 	boolean executando = true;
 	private List<Address> usuariosAtivos;
+	//private String props;
 	
 	public SalaInterface(Sala sala) {
 		this.sala = sala;
-		this.lance = sala.getLanceInicial();
+		this.lance = 0;
 		
 		this.user_name = System.getProperty("user.name", "n/a");
 		this.teclado = new Scanner(System.in);
 		this.executando = true;
 		
-		this.start();
+		//this.start();
 	}
  
 	
 	public void start() {
 		try{
 			//System.out.println("teste B");
-			//this.channel=new JChannel("../meu.xml");		//usa a configuração default
-			this.channel=new JChannel();		//usa a configuração default
+			this.channel=new JChannel("../meu.xml");		//usa a configuração default
+			//this.channel=new JChannel();		//usa a configuração default
 			this.channel.setDiscardOwnMessages(true);
 			this.channel.setReceiver(this);	//quem irá lidar com as mensagens recebidas
 			this.channel.connect(this.sala.getNome());
 			//this.channel.getState(null, 10000);
+			
+		
+			if(this.channel.getAddress()==this.channel.getView().getCreator()){
+				this.leiloeiro = new ChapeuDeLeiloeiro(this);
+				
+				Thread thread = new Thread(this.leiloeiro);
+				thread.start();
+				//this.leiloeiro.run();
+			}
+			
+			try{
+				this.channel.getState(this.channel.getView().getCreator(), 1000000);
+			}
+			catch(Exception e){
+				System.out.println("Falha ao recuperar estado");
+			}
+			
 			eventLoop();
 			channel.close();
 		}
@@ -70,6 +88,13 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 		//System.out.println("[ÁRBITRO DA SALA] ** Novato: "+new_view.getMembers().get(new_view.size()-1));
 		
 		
+		try {
+			this.notificarCluster("bem vindo");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/*
 		if(this.user_name.equals(new_view.getMembers().get(0))){
 			this.leiloeiro = new ChapeuDeLeiloeiro(this);
 			new Thread(this.leiloeiro).start();
@@ -82,7 +107,7 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}
+		}*/
 	}
 	
 	public void receive(Message msgrcvd) {
@@ -128,12 +153,12 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 	public void notificarCluster(String text) throws Exception {
 		System.out.println("Notificando Cluster...");
 		Message msg  = new Message(null, null, text);
-        RequestOptions opts = new RequestOptions(ResponseMode.GET_ALL, 5000).setFlags(Message.NO_FC, Message.DONT_BUNDLE);
+        RequestOptions opts = new RequestOptions(ResponseMode.GET_ALL, 5000);
         
         MessageDispatcher dispachante = new MessageDispatcher(this.channel, null, null, this);
-        RspList<String> rsp_list = dispachante.castMessage(null, msg,opts);
+        RspList<String> rsp_list = dispachante.castMessage(null, msg, opts);
         dispachante.stop();
-        //System.out.println(rsp_list.getResults());
+        System.out.println(rsp_list.getResults());
     }
 	
 	public void menu() throws Exception{
@@ -148,7 +173,6 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 	    }
 		else{
 			double lance = Double.parseDouble(this.line);
-			
 			if(lance>this.sala.getLanceAtual()){
 				//this.leiloeiro.restart();
 				String msg = ".lance:"+user_name+";"+lance;
@@ -157,6 +181,10 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 		    	//this.channel.send(new Message(null, null, msg));
 		    	//this.notificarCluster(new Message(null, null, msg));
 				this.notificarCluster(msg);
+				
+				if(this.leiloeiro!=null){
+					this.leiloeiro.restart();
+				}
 			}
 			else{
 				System.out.println("[Árbitro da sala]: Lance inválido!\nDigite um valor maior do que o lance atual ");
@@ -171,13 +199,16 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 			try{
 				String msg = msgrcvd.getObject().toString();
 				if(msg.startsWith("[LEILOEIRO]: finalizar")){
+					System.out.println("finalizando");
 					this.executando = false;
 					this.sala.setLeilaoFinalizado(true);
 					
-					this.channel.connect("GLOBAL");
-					this.notificarCluster("Sala finalizada:"+this.sala.getItem().getNome()+";"+this.sala.getDonoDoUltimoLance()+";"+this.lance);
+					this.desconectar();
 					
 					return "finalizado";
+				}
+				else if(msg.startsWith("[LEILOEIRO]:")){
+					System.out.println(msg);
 				}
 				else{
 					msg = msg.split(":")[1];
@@ -187,6 +218,10 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 						this.sala.novoLance(lance, msg.split(";")[0]);
 						//msg = "[Árbitro da sala]: Usuário "+msgrcvd.src()+" deu um lance de "+lance;
 						System.out.println("[Árbitro da sala]: Usuário "+msgrcvd.src()+" deu um lance de "+lance);
+						
+						if(this.leiloeiro!=null){
+							this.leiloeiro.restart();
+						}
 					}
 				}
 			}
@@ -196,5 +231,29 @@ public class SalaInterface extends ReceiverAdapter implements RequestHandler{
 		}
 		
 		return null;
+	}
+		
+	public boolean temMaisAlguemNaSala(){
+		return this.channel.getView().size()!=1;
+	}
+	
+	public boolean isLanceNulo(){
+		return this.sala.getLanceAtual()==0;
+	}
+	
+	public void desconectar(){
+		try {
+			System.out.println("Vencedor: "+this.sala.getItem().getNome()+", lance: "+this.sala.getDonoDoUltimoLance()+";"+this.lance);
+			this.channel.disconnect();
+			this.channel.connect("GLOBAL");
+			this.notificarCluster("Sala finalizada:"+this.sala.getItem().getNome()+";"+this.sala.getDonoDoUltimoLance()+";"+this.lance);
+		} catch (Exception e) {
+			System.out.println("Falha ao anunciar vencedor");
+			e.printStackTrace();
+		}
+	}
+	
+	public String vencedor(){
+		return "Vencedor: "+this.sala.getDonoDoUltimoLance()+", item: "+this.sala.getItem().getNome()+", lance: "+this.sala.getLanceAtual();
 	}
 }

@@ -6,10 +6,11 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 
-
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
@@ -38,14 +39,21 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 	private JChannel channel;
 	//private MessageDispatcher dispachante;
 	
-	
 	private View old_view;
+	
+	
+	private List<Address> coordenadores;
+	private int minimoCordenadores;
+	private double porcentagemCordenadores;
 	
 	public SistemaInterface() {
 		this.sistema = new SistemaNucleo();
 		this.user_name = System.getProperty("user.name", "n/a");
 		this.teclado = new Scanner(System.in);
 		this.executando = true;
+		
+		this.minimoCordenadores =  10;
+		this.porcentagemCordenadores = 0.05;
 	}
  
 	
@@ -86,6 +94,8 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		System.out.println("[GLOBAL BOT] ** Usuários ativos: "+new_view.getMembers());
 		//System.out.println("[GLOBAL BOT] ** Usuários ativos: "+new_view.getMembers().get(new_view.size()-1));
 		
+		
+		
 		//System.out.println("[GLOBAL BOT] ** Lider: "+new_view.getCreator());
 		//System.out.println("[GLOBAL BOT] ** Novato: "+new_view.getMembers().get(new_view.size()-1));
 		//View old_view = this.channel.getView();
@@ -116,6 +126,8 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 			}
         }
 		
+		
+		
         /*
 		System.out.println("id: "+old_view+" >"+new_view);
 		if(this.old_view==null||this.channel.getAddress()==new_view.getMembers().get(new_view.size()-1)){
@@ -129,6 +141,19 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		}
 		//new_view.
 		this.old_view = new_view;*/
+	}
+	
+	private void atualizaCoordenadores(View new_view){
+
+		//atualiza os coordenadores
+		if(new_view.getMembers().size()<this.minimoCordenadores){
+			this.coordenadores = new_view.getMembers();
+		}
+		else{
+			int x = Math.max(this.minimoCordenadores, (int)(this.porcentagemCordenadores*new_view.getMembers().size()));
+			this.coordenadores = new_view.getMembers().subList(0, x);
+		}
+		
 	}
 	
 	public void receive(Message msgrcvd) {
@@ -183,7 +208,7 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
         RequestOptions opts = new RequestOptions(ResponseMode.GET_ALL, 5000);
       
         MessageDispatcher dispachante = new MessageDispatcher(this.channel, null, null, this);
-        RspList<String> rsp_list = dispachante.castMessage(null, msg,opts);
+        RspList<String> rsp_list = dispachante.castMessage(null, msg, opts);
         dispachante.stop();
         System.out.println(rsp_list.getResults());
     }
@@ -192,25 +217,20 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		System.out.print("> ");
         line = teclado.nextLine().toLowerCase();
         
-        
-        
-        
-        
-        
 	    if(line.startsWith(".novo item:")){
 	    	String msg = "";
 			String item = line.split(":")[1];
 			String user = this.user_name;
 			long data = System.currentTimeMillis();
 			
-			//itensLock.lock();
+			itensLock.lock();
 			try{
 				int id = sistema.gerarIdItem();
 				msg = ".novo item:"+id+";"+item+";"+user+";"+data;
 				this.notificarCluster(new Message(null, null, msg));
 			}
 			finally{
-				//itensLock.unlock();
+				itensLock.unlock();
 				
 			}
 			sistema.criarNovoItem(msg);
@@ -218,8 +238,6 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 			
 		}
 	    else if(line.startsWith(".nova sala:")){
-	    	
-			
 	    	int id = 0;
 	    	String msg = "";
 	    	line = line.split(":")[1];
@@ -243,8 +261,11 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 			
 			if(id>0){
 				this.channel.disconnect();
-		    	sistema.entrarSala(".entrar sala:"+id);
-		    	channel.connect("GLOBAL");
+				msg = sistema.entrarSala(".entrar sala:"+id);
+		    	
+				System.out.println(msg);
+		    	this.notificarCluster(new Message(null, null, msg));
+		    	//channel.connect("GLOBAL");
 				//channel.getState(null, 10000);
 			}
 		}
@@ -252,7 +273,7 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 	    	this.channel.disconnect();
 	    	sistema.entrarSala(line);
 	    	
-	    	channel.connect("GLOBAL");
+	    	//channel.connect("GLOBAL");
 			//channel.getState(null, 10000);
 	    }
 		else if(line.startsWith(".listar itens")){
@@ -301,10 +322,9 @@ public class SistemaInterface extends ReceiverAdapter implements RequestHandler{
 		    else if(msg.startsWith("[LEILOEIRO]: atualizar")){
 		    	this.channel.getState(null, 10000);
 		    }
-			if(msg.startsWith("Sala finalizada:")){
-				msg = msg.split(":")[1];
-				
-				this.sistema.historico("Leilão:"+msg);
+			if(msg.startsWith("Vencedor:")){
+				System.out.println(msg);
+				this.sistema.historico(msg);
 				return "finalizado";
 			}
 		    else {

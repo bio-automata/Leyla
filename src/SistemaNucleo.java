@@ -6,10 +6,14 @@ public class SistemaNucleo implements Serializable{
 	private static final long serialVersionUID = 6840821732808468010L;
 	//String user_name;
 	private int contadorGlobalDeItens;
+	List<Usuario> usuarios;
 	List<Item> itens;
 	//List<Item> itensEmLeilao;
 	List<Sala> salas;
+	List<String> leiloesResultados;
 	List<String> historico;
+	 
+	
 	
 	
 	public SistemaNucleo() {
@@ -17,7 +21,7 @@ public class SistemaNucleo implements Serializable{
 		//this.user_name = System.getProperty("user.name", "n/a");
 		this.itens = new ArrayList<>();
 		this.salas = new ArrayList<>();
-		this.historico = new ArrayList<>();
+		this.historico = new ArrayList<>(); 
 	}
 	
 	public int gerarIdItem(){
@@ -26,6 +30,22 @@ public class SistemaNucleo implements Serializable{
 	
 	public int gerarIdSala(){
 		return this.salas.size()+1;
+	}
+	
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	public Usuario getUsuario(int i) {
+		return usuarios.get(i);
+	}
+	
+	public List<Usuario> getUsuarios() {
+		return usuarios;
+	}
+
+	public void criarnovoUsuario(Usuario usuario) {
+		this.usuarios.add(usuario);
 	}
 	
 	public void criarNovoItem(String line){
@@ -56,11 +76,14 @@ public class SistemaNucleo implements Serializable{
 			System.out.println("Leilão do item "+item.getNome()+" iniciado na sala "+itemId);
 	}
 	
-	public void entrarSala(String line){
+	public String entrarSala(String line){
 		int id = Integer.parseInt(line.split(":")[1]);
 		Sala sala = this.salas.get(id-1);
+		SalaInterface si = new SalaInterface(sala);
 		
-		new SalaInterface(sala);
+		si.start();
+		
+		return si.vencedor();
 	}
 	
 	public void listarItens(){
@@ -72,6 +95,24 @@ public class SistemaNucleo implements Serializable{
 	}
 	
 	public void listarSalas(){
+		int i = 1;
+		for(Sala sala: this.salas){
+			System.out.println("Sala "+i+": "+sala.getItem().getNome());
+			i++;
+		}
+	}
+	
+	public String FinalizarLeilao(int idItem, String vencedor){
+		//retira a sala da lista de salas
+		int idSala = 0;
+		this.salas.remove(idSala-1);
+		
+		//transmite mensagem para o cluster indicando quem ganhou o leilão
+		
+		return vencedor;
+	}
+	
+	public void listarLeiloesFinalizados(){
 		int i = 1;
 		for(Sala sala: this.salas){
 			System.out.println("Sala "+i+": "+sala.getItem().getNome());
@@ -135,9 +176,5 @@ public class SistemaNucleo implements Serializable{
 
 	public void setHistorico(List<String> historico) {
 		this.historico = historico;
-	}
-
-	public static long getSerialversionuid() {
-		return serialVersionUID;
 	}
 }

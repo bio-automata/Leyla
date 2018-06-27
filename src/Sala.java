@@ -3,8 +3,7 @@ import java.io.Serializable;
 public class Sala implements Serializable{
     private static final long serialVersionUID = 5828282449691544280L;
 	private String nome;
-    private Item item;
-    private double lanceInicial;
+    private Item item;    
     private double lanceAtual;
     private boolean leilaoFinalizado;
     private String donoDoUltimoLance;
@@ -12,8 +11,8 @@ public class Sala implements Serializable{
     public Sala(String nome, Item item, double lanceInicial, double valorLance){
         this.nome = nome;
         this.item = item;
-        this.lanceInicial = lanceInicial;
-        this.lanceAtual = this.lanceInicial;
+        
+        this.lanceAtual = 0;
         this.donoDoUltimoLance = "";
         this.leilaoFinalizado = false;
     }
@@ -21,7 +20,6 @@ public class Sala implements Serializable{
     public Sala(String nome, Item item){
         this.nome = nome;
         this.item = item;
-        this.lanceInicial = 0;
         this.lanceAtual = 0;
         this.leilaoFinalizado = false;
     }
@@ -42,13 +40,7 @@ public class Sala implements Serializable{
         this.nome = nome;
     }
 
-	public double getLanceInicial() {
-		return lanceInicial;
-	}
 
-	public void setLanceInicial(double lanceInicial) {
-		this.lanceInicial = lanceInicial;
-	}
 
 	public double getLanceAtual() {
 		return lanceAtual;
@@ -59,8 +51,10 @@ public class Sala implements Serializable{
 	};
 	
 	public void novoLance(double lance, String dono){
-		this.lanceAtual = lance; 
-		this.donoDoUltimoLance = dono;
+		if(lance>this.lanceAtual){
+			this.lanceAtual = lance; 
+			this.donoDoUltimoLance = dono;
+		}
 	}
 
 	public String getDonoDoUltimoLance() {

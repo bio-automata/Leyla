@@ -40,27 +40,39 @@ public class ChapeuDeLeiloeiro implements Runnable{
 	
 	@Override
 	public void run() {
+		boolean rodando = true;
 		try {
-			if(this.timer==0){
-				this.timer = System.currentTimeMillis();
-			}
-			if(System.currentTimeMillis()>this.timer+10000 ){
-				String msg = "[LEILOEIRO]: ";
-				this.timer = System.currentTimeMillis();
-				if(this.contador>3){
-					msg = msg+"finalizar";
+			while(rodando){
+				//System.out.println("Running A");
+				if(this.timer==0){
+					//System.out.println("Running B");
+					this.timer = System.currentTimeMillis();
 				}
-				else{
-					this.contador++;
-					msg = msg+"Quem dá mais? Dou-lhe "+this.contador;
+				if(System.currentTimeMillis()>this.timer+10000 && this.salaInterface.temMaisAlguemNaSala() && !this.salaInterface.isLanceNulo()){
+					//System.out.println("Running C");
+					String msg = "[LEILOEIRO]: ";
+					this.timer = System.currentTimeMillis();
+					if(this.contador>2){
+						msg = msg+"finalizar";
+						rodando = false;
+					}
+					else{
+						this.contador++;
+						msg = msg+"Quem dá mais? Dou-lhe "+this.contador;
+					}
+					
+					System.out.println(msg);
+					this.salaInterface.notificarCluster(msg);
 				}
-				this.salaInterface.notificarCluster(msg);
+				
 				Thread.sleep(1000);
 			}
-			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		finally{
+			this.salaInterface.desconectar();
 		}
 	}
 }
