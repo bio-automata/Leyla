@@ -1,28 +1,11 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Scanner;
 
-import org.jgroups.Address;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
-import org.jgroups.blocks.MessageDispatcher;
-import org.jgroups.blocks.RequestHandler;
-import org.jgroups.blocks.RequestOptions;
-import org.jgroups.blocks.ResponseMode;
-import org.jgroups.util.RspList;
-import org.jgroups.util.Util;
 
 public class ChapeuDeLeiloeiro implements Runnable{
-	private SalaInterface salaInterface;
-	private Long timer;
+	private SalaComunicacao salaInterface;
+	private long timer;
 	private int contador;
 	
-	public ChapeuDeLeiloeiro(SalaInterface salaInterface) {
+	public ChapeuDeLeiloeiro(SalaComunicacao salaInterface) {
 		this.salaInterface = salaInterface;
 		this.timer = (long) 0;
 		this.contador = 0;
@@ -34,7 +17,7 @@ public class ChapeuDeLeiloeiro implements Runnable{
 		this.contador = 0;
 	}
 	
-	public Long getTimer(){
+	public long getTimer(){
 		return this.timer;
 	}
 	
@@ -48,13 +31,16 @@ public class ChapeuDeLeiloeiro implements Runnable{
 					//System.out.println("Running B");
 					this.timer = System.currentTimeMillis();
 				}
-				if(System.currentTimeMillis()>this.timer+10000 && this.salaInterface.temMaisAlguemNaSala() && !this.salaInterface.isLanceNulo()){
+				if(System.currentTimeMillis()>this.timer+5000 && this.salaInterface.temMaisAlguemNaSala() && !this.salaInterface.isLanceNulo()){
 					//System.out.println("Running C");
 					String msg = "[LEILOEIRO]: ";
 					this.timer = System.currentTimeMillis();
 					if(this.contador>2){
-						msg = msg+"finalizar";
+						//msg = msg+"finalizar";
+						this.salaInterface.broadcastCluster("..finalizar");
 						rodando = false;
+						this.salaInterface.executando = false;
+						this.salaInterface.desconectar();
 					}
 					else{
 						this.contador++;
@@ -62,7 +48,7 @@ public class ChapeuDeLeiloeiro implements Runnable{
 					}
 					
 					System.out.println(msg);
-					this.salaInterface.notificarCluster(msg);
+					this.salaInterface.broadcastCluster(msg);
 				}
 				
 				Thread.sleep(1000);
@@ -72,7 +58,7 @@ public class ChapeuDeLeiloeiro implements Runnable{
 			e.printStackTrace();
 		}
 		finally{
-			this.salaInterface.desconectar();
+			//this.salaInterface.desconectar();
 		}
 	}
 }

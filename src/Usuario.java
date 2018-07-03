@@ -1,28 +1,17 @@
 import java.io.Serializable;
+import java.util.List;
 
 public class Usuario implements Serializable{
     private static final long serialVersionUID = 5828282449691544280L;
-	private String nome;
 	private String cpf;
     private String senha;
+    private List<String> premios;
     
 
-    public Usuario(String nome, String cpf, String senha){
-        this.nome = nome;
+    public Usuario(String cpf, String senha){
         this.cpf = cpf;
         this.senha = senha;
     }
-
-
-	public String getNome() {
-		return nome;
-	}
-
-
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
-
 
 	public String getCpf() {
 		return cpf;
@@ -42,4 +31,14 @@ public class Usuario implements Serializable{
 	public void setSenha(String senha) {
 		this.senha = senha;
 	}
+
+	public List<String> getPremios() {
+		return premios;
+	}
+
+	public void setPremios(List<String> premios) {
+		this.premios = premios;
+	}
+	
+	
 }

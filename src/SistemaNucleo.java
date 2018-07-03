@@ -1,27 +1,22 @@
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
 public class SistemaNucleo implements Serializable{
 	private static final long serialVersionUID = 6840821732808468010L;
 	//String user_name;
 	private int contadorGlobalDeItens;
 	List<Usuario> usuarios;
 	List<Item> itens;
-	//List<Item> itensEmLeilao;
 	List<Sala> salas;
 	List<String> leiloesResultados;
-	List<String> historico;
-	 
-	
-	
 	
 	public SistemaNucleo() {
 		this.contadorGlobalDeItens = 0;
 		//this.user_name = System.getProperty("user.name", "n/a");
+		this.usuarios = new ArrayList<>();
 		this.itens = new ArrayList<>();
 		this.salas = new ArrayList<>();
-		this.historico = new ArrayList<>(); 
+		//this.historico = new ArrayList<>(); 
 	}
 	
 	public int gerarIdItem(){
@@ -44,11 +39,45 @@ public class SistemaNucleo implements Serializable{
 		return usuarios;
 	}
 
-	public void criarnovoUsuario(Usuario usuario) {
-		this.usuarios.add(usuario);
+	public String loginUsuario(String msg) {
+		//msg = msg.split(":")[1];
+		System.out.println(msg);
+		String cpf = msg.split(";")[0];
+		String senha = msg.split(";")[1];
+		//System.out.println(cpf);
+		//System.out.println(senha);
+		
+		
+		Usuario usuario = new Usuario(cpf,senha);
+		for(Usuario auxuser : this.usuarios){
+			System.out.println(auxuser.getCpf()+" "+auxuser.getSenha());
+			if(auxuser.getCpf().equals(cpf)){
+				if(auxuser.getSenha().equals(senha)){
+					return "logado";
+				}
+				else{
+					return "!logado";   //não está logado
+				}
+			}
+		}
+		
+		return "!cadastrado";
 	}
 	
-	public void criarNovoItem(String line){
+	public String criarUsuario(String msg) {
+		//msg = msg.split(":")[1];
+		System.out.println(msg);
+		String cpf = msg.split(";")[0];
+		String senha = msg.split(";")[1];
+		//System.out.println(cpf);
+		//System.out.println(senha);
+		Usuario usuario = new Usuario(cpf,senha);
+		this.usuarios.add(usuario);
+		return "logado";
+	}
+	
+	
+	public String criarNovoItem(String line){
 			line = line.split(":")[1];
 			int id = Integer.parseInt(line.split(";")[0]);
 			String item = line.split(";")[1];
@@ -58,9 +87,10 @@ public class SistemaNucleo implements Serializable{
 			this.contadorGlobalDeItens = id;
 			this.itens.add(new Item(id, item, dono, data));
 			System.out.println("Item adicionado: "+item+" (ID:"+this.contadorGlobalDeItens+")");
+			return "Item adicionado: "+item+" (ID:"+this.contadorGlobalDeItens+")";
 	}
 	
-	public void criarNovaSala(String line){
+	public String criarNovaSala(String line){
 			line = line.split(":")[1];
 			//System.out.println(line.split(";")[1]);
 			int id = this.salas.size()+1;
@@ -74,16 +104,36 @@ public class SistemaNucleo implements Serializable{
 			
 			//this.itensEmLeilao.add(item);
 			System.out.println("Leilão do item "+item.getNome()+" iniciado na sala "+itemId);
+			return "Leilão do item "+item.getNome()+" iniciado na sala "+itemId;
 	}
 	
 	public String entrarSala(String line){
-		int id = Integer.parseInt(line.split(":")[1]);
+		line = line.split(":")[1];
+		int id = Integer.parseInt(line.split(";")[0]);
+		String cpf = line.split(";")[1];
 		Sala sala = this.salas.get(id-1);
-		SalaInterface si = new SalaInterface(sala);
 		
-		si.start();
+		if(!sala.isLeilaoFinalizado()){
+			SalaInterface si = new SalaInterface(cpf, sala);
+			si.start();
+			sala.setLeilaoFinalizado(true);
+		}
+		else{
+			//this.salas.set(id-1, null);
+			System.out.println("[GLOBAL BOT]: Sala fechada...");
+			//this.salas.remove(id-1);
+		}
 		
-		return si.vencedor();
+		
+		return ""; //si.vencedor();
+	}
+	
+	public void listarUsuarios(){
+		int i = 1;
+		for(Usuario usuario: this.usuarios){
+			System.out.println("Usuario "+i+": "+usuario.getCpf());
+			i++;
+		}
 	}
 	
 	public void listarItens(){
@@ -102,13 +152,11 @@ public class SistemaNucleo implements Serializable{
 		}
 	}
 	
-	public String FinalizarLeilao(int idItem, String vencedor){
+	public String FinalizarLeilao(int idSala, String vencedor){
 		//retira a sala da lista de salas
-		int idSala = 0;
+		//int idSala = 0;
 		this.salas.remove(idSala-1);
-		
 		//transmite mensagem para o cluster indicando quem ganhou o leilão
-		
 		return vencedor;
 	}
 	
@@ -120,12 +168,6 @@ public class SistemaNucleo implements Serializable{
 		}
 	}
 	
-	public void historico(String msg){
-		if(!this.historico.contains(msg)){
-			this.historico.add(msg);
-		}
-	}
-	
 	public void creditos(){
 		System.out.println("Sistema Leyla\n Casa de Leilão versão 0.0.1");
 		System.out.println("\nColaboradores:");
@@ -133,13 +175,13 @@ public class SistemaNucleo implements Serializable{
 		System.out.println("	Rodrigo Cezar Silveira");
 		System.out.println("	Saulo Carvalho");
 	}
-		
+	
 	
 	public void help(){
 		System.out.println("Para realizar uma operação digite uma das seguintes opções:");
 		System.out.println(".novo item:\"nome do item\"");
 		System.out.println(".nova sala:\"id do item\"");
-		System.out.println(".entrar na sala:\"id|nome da sala\"");
+		System.out.println(".entrar na sala:\"id\"");
 		System.out.println(".listar itens");
 		System.out.println(".listar salas");
 		System.out.println(".creditos\n\n");
@@ -169,12 +211,15 @@ public class SistemaNucleo implements Serializable{
 	public void setSalas(List<Sala> salas) {
 		this.salas = salas;
 	}
-
-	public List<String> getHistorico() {
-		return historico;
-	}
-
-	public void setHistorico(List<String> historico) {
-		this.historico = historico;
+	
+	
+	public String usuariosToString(){
+		String s = "";
+		
+		for(Usuario u : this.usuarios){
+			s = s+u.getCpf()+","+u.getSenha()+";";
+		}
+		
+		return s;
 	}
 }

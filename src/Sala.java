@@ -1,5 +1,6 @@
 import java.io.Serializable;
 
+
 public class Sala implements Serializable{
     private static final long serialVersionUID = 5828282449691544280L;
 	private String nome;
@@ -41,14 +42,13 @@ public class Sala implements Serializable{
     }
 
 
-
 	public double getLanceAtual() {
 		return lanceAtual;
 	}
 
 	public void setLanceAtual(double lanceAtual) {
 		this.lanceAtual = lanceAtual;
-	};
+	}
 	
 	public void novoLance(double lance, String dono){
 		if(lance>this.lanceAtual){
